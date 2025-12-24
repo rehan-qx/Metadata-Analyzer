@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>.0xR00t | Deep Metadata Forensics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { 
+            font-family: 'JetBrains Mono', monospace; 
+            background-color: #050505; 
+            color: #00ff41; 
+            overflow-x: hidden; 
+        }
+        
+        /* Matrix Background */
+        #matrixCanvas { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: -1; 
+            opacity: 0.2; 
+        }
+        
+        /* Cyberpunk Borders */
+        .cyber-box {
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid #003b00;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        .cyber-box:hover {
+            border-color: #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        /* Table Styling */
+        .meta-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .meta-table tr { border-bottom: 1px solid #1a1a1a; transition: background 0.2s; }
+        .meta-table tr:hover { background: rgba(0, 255, 65, 0.05); }
+        .meta-table td { padding: 10px; font-size: 0.85rem; vertical-align: top; }
+        
+        .key-col { color: #00ff41; font-weight: bold; width: 35%; border-right: 1px solid #1a1a1a; }
+        .val-col { color: #ccc; word-break: break-all; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #003b00; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ff41; }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4">
+
+    <canvas id="matrixCanvas"></canvas>
+
+    <div class="text-center mt-10 mb-8 z-10">
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-white glitch-effect">
+            <span class="text-green-500">.0x</span>R00t <span class="text-xs align-top text-gray-500">V2.0</span>
+        </h1>
+        <p class="text-green-800 text-sm font-bold tracking-[0.2em] mt-2">>> ADVANCED_METADATA_ANALYZER</p>
+    </div>
+
+    <div class="w-full max-w-4xl cyber-box rounded-lg p-6 md:p-10 relative z-10">
+        
+        <div class="border-2 border-dashed border-green-900/50 hover:border-green-500 rounded-lg p-8 text-center transition-all group cursor-pointer relative" id="dropZone">
+            <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*">
+            <div class="space-y-4">
+                <i class="fas fa-fingerprint text-5xl text-green-900 group-hover:text-green-500 transition-colors"></i>
+                <h3 class="text-xl font-bold text-gray-300">DROP_FILE_HERE</h3>
+                <p class="text-xs text-green-700">SUPPORTS: JPG, PNG, HEIC, TIFF, WEBP</p>
+            </div>
+        </div>
+
+        <div id="previewSection" class="hidden mt-8 flex flex-col md:flex-row gap-6 border-t border-green-900/30 pt-6">
+            <div class="w-full md:w-1/3 text-center">
+                <img id="imgPreview" class="rounded border border-green-900 max-h-60 mx-auto object-contain bg-black" src="">
+                <div id="fileInfo" class="mt-4 text-xs text-gray-500 font-mono text-left space-y-1 p-2 bg-green-900/10 rounded"></div>
+            </div>
+            
+            <div class="w-full md:w-2/3">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-lg font-bold text-white"><i class="fas fa-terminal mr-2"></i>EXTRACTION_LOGS</h3>
+                    <button id="copyBtn" class="text-xs bg-green-900/30 hover:bg-green-600 hover:text-black border border-green-700 text-green-500 px-3 py-1 rounded transition-all">
+                        COPY JSON
+                    </button>
+                </div>
+                
+                <div id="loading" class="hidden text-center py-10">
+                    <i class="fas fa-circle-notch fa-spin text-3xl text-green-500"></i>
+                    <p class="mt-2 text-xs animate-pulse">DECRYPTING BINARY DATA...</p>
+                </div>
+
+                <div id="outputContainer" class="max-h-[400px] overflow-y-auto pr-2 hidden">
+                    <table class="meta-table" id="metaTable">
+                        </table>
+                </div>
+                
+                <div id="errorMsg" class="hidden mt-4 p-4 bg-red-900/20 border border-red-900 text-red-400 text-sm text-center">
+                    <i class="fas fa-skull-crossbones mb-2 text-xl"></i><br>
+                    NO METADATA DETECTED<br>
+                    <span class="text-xs text-gray-500">(File might be scrubbed by Social Media)</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="mt-12 mb-6 text-center text-xs w-full max-w-4xl border-t border-green-900/30 pt-4 z-10">
+        <div class="space-y-2">
+            <p class="font-bold tracking-widest text-green-600">
+                © 2025 <span class="text-green-400">.0xR00t LABS</span>
+            </p>
+            <p class="text-green-900 text-[10px] uppercase">
+                Decentralized Forensics // All Rights Reserved
+            </p>
+            
+            <div class="flex justify-center gap-6 mt-4 text-green-800 text-sm font-bold">
+                <a href="https://github.com/rehan-qx" target="_blank" class="hover:text-green-400 transition-colors flex items-center gap-2">
+                    <i class="fab fa-github"></i> GITHUB
+                </a>
+                
+                <span class="text-green-900">|</span>
+                
+                <a href="https://discord.gg/VpKCvT74Mw" target="_blank" class="hover:text-green-400 transition-colors flex items-center gap-2">
+                    <i class="fab fa-discord"></i> DISCORD
+                </a>
+                
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Matrix Background Logic
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const chars = '01'; 
+        const drops = Array(Math.floor(canvas.width / 14)).fill(1);
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0'; ctx.font = '14px monospace';
+            drops.forEach((y, i) => {
+                ctx.fillText(chars[Math.floor(Math.random()*2)], i*14, y*14);
+                if(y*14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            });
+        }
+        setInterval(drawMatrix, 50);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        // Core App Logic
+        const fileInput = document.getElementById('fileInput');
+        const previewSection = document.getElementById('previewSection');
+        const imgPreview = document.getElementById('imgPreview');
+        const metaTable = document.getElementById('metaTable');
+        const loading = document.getElementById('loading');
+        const outputContainer = document.getElementById('outputContainer');
+        const errorMsg = document.getElementById('errorMsg');
+        const fileInfo = document.getElementById('fileInfo');
+        let extractedData = {};
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Reset UI States
+            previewSection.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            outputContainer.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+            metaTable.innerHTML = '';
+            
+            // Populate Basic File Info
+            fileInfo.innerHTML = `
+                <div>NAME: <span class="text-green-400">${file.name}</span></div>
+                <div>SIZE: <span class="text-green-400">${(file.size / 1024).toFixed(2)} KB</span></div>
+                <div>TYPE: <span class="text-green-400">${file.type || 'Unknown'}</span></div>
+                <div>LAST MOD: <span class="text-green-400">${new Date(file.lastModified).toLocaleDateString()}</span></div>
+            `;
+
+            // Render Image Preview
+            const reader = new FileReader();
+            reader.onload = (e) => imgPreview.src = e.target.result;
+            reader.readAsDataURL(file);
+
+            try {
+                // EXIFR PARSING
+                extractedData = await exifr.parse(file, {
+                    tiff: true,
+                    xmp: true,
+                    icc: true,
+                    iptc: true,
+                    jfif: true,
+                    ihdr: true,
+                    gps: true,
+                    mergeOutput: false 
+                });
+
+                loading.classList.add('hidden');
+
+                if (!extractedData) {
+                    errorMsg.classList.remove('hidden');
+                    return;
+                }
+
+                outputContainer.classList.remove('hidden');
+                renderTable(extractedData);
+
+            } catch (err) {
+                console.error(err);
+                loading.classList.add('hidden');
+                errorMsg.innerHTML = `ERROR: ${err.message}`;
+                errorMsg.classList.remove('hidden');
+            }
+        });
+
+        function renderTable(data) {
+            let html = '';
+            
+            // Iterate over data blocks
+            for (const [blockName, blockData] of Object.entries(data)) {
+                if (!blockData) continue;
+                
+                // Section Header
+                html += `
+                    <tr><td colspan="2" class="bg-green-900/20 text-white font-bold tracking-widest border-l-4 border-green-500 py-2 pl-2">
+                        // ${blockName.toUpperCase()}
+                    </td></tr>
+                `;
+
+                for (const [key, val] of Object.entries(blockData)) {
+                    // Filter out massive binary arrays
+                    if (val instanceof Uint8Array || val instanceof Uint16Array || val instanceof ArrayBuffer) continue;
+                    
+                    let displayVal = val;
+                    
+                    // Format Dates
+                    if (val instanceof Date) displayVal = val.toLocaleString();
+                    
+                    // Highlight GPS Coords
+                    if (key === 'latitude' || key === 'longitude') {
+                        displayVal = `<span class="text-yellow-400 font-bold">${val}</span>`;
+                    }
+
+                    html += `
+                        <tr>
+                            <td class="key-col">${key}</td>
+                            <td class="val-col">${displayVal}</td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            // Add Google Maps Button if GPS exists
+            if (data.gps && data.gps.latitude && data.gps.longitude) {
+                const mapLink = `https://www.google.com/maps?q=${data.gps.latitude},${data.gps.longitude}`;
+                html += `
+                    <tr><td colspan="2" class="p-4 text-center">
+                        <a href="${mapLink}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-bold text-xs inline-flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i> VIEW LOCATION ON MAPS
+                        </a>
+                    </td></tr>
+                `;
+            }
+
+            metaTable.innerHTML = html;
+        }
+
+        // Copy Button Logic
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            navigator.clipboard.writeText(JSON.stringify(extractedData, null, 2));
+            const btn = document.getElementById('copyBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "COPIED!";
+            setTimeout(() => btn.innerText = originalText, 2000);
+        });
+    </script>
+</body>
+</html>
