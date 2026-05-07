@@ -9,9 +9,9 @@
 
 ## 📜 Overview
 
-**.0xR00t** is a lightweight, web-based digital forensics tool designed to extract hidden metadata from image files. Built with a **"Hacker/Cyberpunk" aesthetic**, it runs entirely in your browser using the powerful `exifr` library.
+**DMF** is a lightweight, web-based digital forensics tool designed to extract hidden metadata from image files. Built with a **"Hacker/Cyberpunk" aesthetic**, it runs entirely in your browser using the powerful `exifr` library.
 
-Unlike online tools that upload your files to a server, **.0xR00t processes everything locally**, ensuring 100% privacy for sensitive forensic investigations.
+Unlike online tools that upload your files to a server, **DMF processes everything locally**, ensuring 100% privacy for sensitive forensic investigations.
 
 ## ✨ Key Features
 
