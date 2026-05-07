@@ -1,4 +1,4 @@
-# 🕵️‍♂️ .0xR00t | Deep Metadata Forensics
+# 🕵️‍♂️ Deep Metadata Forensics
 
 > **Client-Side Image Forensics & Metadata Extraction Tool**
 > *Advanced EXIF, XMP, IPTC, and GPS Analyzer with a Cyberpunk Interface.*
@@ -67,4 +67,14 @@ Feel free to fork this project and add features like:
 The creator is not responsible for how this tool is used. Ensure you have permission to analyze files that do not belong to you.
 
 ---
-**Developed by .0xR00t LABS // Decentralized Forensics**
+**Developed by TeamCyberOps // Decentralized Forensics**
+
+---
+
+### 📢 Stay Updated
+Join our WhatsApp channel for daily cyber updates, vulnerability write-ups, and security news!
+
+👉 **[Join Our WhatsApp Channel](https://whatsapp.com/channel/0029Vb5n1UC7oQhYnrlUBD26)**
+
+---
+*Maintained by **Muhammad Rehan Afzal** | Founder, TeamCyberOps*
